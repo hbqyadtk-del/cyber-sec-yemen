@@ -38,7 +38,7 @@
   .row{display:flex;gap:10px;flex-wrap:wrap}
   .center{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
   
-  /* جدول المادة — متجاوب بالكامل */
+  /* جدول المادة — متجاوب تلقائي */
   .table-wrap {
     background: #0b1220;
     border: 1px solid var(--border);
@@ -86,49 +86,42 @@
     color: #a7b4c2;
   }
 
-  /* 👇 جدول متجاوب على الشاشات الصغيرة */
+  /* 👇 تحويل الجدول إلى بطاقات على الجوال (بدون تكرار أو تعقيد) */
   @media (max-width: 768px) {
     .table-wrap {
       overflow-x: hidden;
     }
 
-    table, thead, tbody, th, td, tr {
+    table, thead, tbody, tr, th, td {
       display: block;
-      width: 100%;
     }
 
-    thead tr {
-      position: absolute;
-      top: -9999px;
-      left: -9999px;
+    thead {
+      display: none;
     }
 
     tr {
-      border: 1px solid var(--border);
-      margin-bottom: 14px;
+      background: #0e1622;
+      margin-bottom: 12px;
       padding: 12px;
       border-radius: 12px;
-      background: #0e1622;
+      border: 1px solid var(--border);
     }
 
     td {
-      text-align: right;
+      text-align: right !important;
       padding: 10px 12px !important;
       position: relative;
       border: none;
     }
 
     td:before {
-      content: attr(data-label) ": ";
+      content: attr(aria-label) ": ";
       font-weight: bold;
       color: var(--accent);
       display: inline-block;
       width: 100px;
       text-align: left;
-    }
-
-    td.name:before {
-      content: "الاسم: ";
     }
   }
 </style>
@@ -211,7 +204,7 @@
 /* =========================
    الإعدادات والثوابت
 ========================= */
-const TEACHER_MASTER_PASS = "590"; // كلمة السر العامة للمربي
+const TEACHER_MASTER_PASS = "590";
 const classes = [
   "صف أول ابتدائي","صف ثاني ابتدائي","صف ثالث ابتدائي",
   "صف رابع ابتدائي","صف خامس ابتدائي","صف سادس ابتدائي",
@@ -223,26 +216,21 @@ const subjects = [
   "كيمياء","أحياء","فيزياء","إنجليزي","حاسوب"
 ];
 
-/* مفاتيح التخزين */
-const kRoster   = cls => `roster__${cls}`;                   // مصفوفة أسماء الطلاب للصف
-const kData     = (cls,subj) => `data__${cls}__${subj}`;     // بيانات المادة (صفيف كائنات)
-const kSubPass  = (cls,subj) => `subpass__${cls}__${subj}`;  // كلمة سر المادة
+const kRoster   = cls => `roster__${cls}`;
+const kData     = (cls,subj) => `data__${cls}__${subj}`;
+const kSubPass  = (cls,subj) => `subpass__${cls}__${subj}`;
 
-/* حالة التطبيق */
 let currentClass = null;
-let currentRole  = null;  // "parent" | "teacher"
+let currentRole  = null;
 let currentSubject = null;
 
-/* عناصر DOM مختصرة */
 const byId = id => document.getElementById(id);
 const pageHome = byId('pageHome');
 const pageRole = byId('pageRole');
 const pageMaterials = byId('pageMaterials');
 const pageTable = byId('pageTable');
 
-/* ================
-   صفحة الصفوف
-================ */
+/* صفحة الصفوف */
 const gridClasses = byId('gridClasses');
 classes.forEach(cls=>{
   const card = document.createElement('div');
@@ -273,9 +261,7 @@ function goHome(){
   currentClass = null; currentRole=null; currentSubject=null;
 }
 
-/* ================
-   اختيار الدور
-================ */
+/* اختيار الدور */
 function chooseRole(role){
   currentRole = role;
   if(role === 'teacher'){
@@ -289,9 +275,7 @@ function backToRole(){
   pageRole.style.display = 'block';
 }
 
-/* ================
-   صفحة المواد (كروت)
-================ */
+/* صفحة المواد */
 const gridSubjects = byId('gridSubjects');
 function openMaterialsPage(){
   pageRole.style.display = 'none';
@@ -318,27 +302,21 @@ function openMaterialsPage(){
     gridSubjects.appendChild(c);
   });
 
-  // تأكد من وجود كشف أسماء مبدئي
   ensureRoster(currentClass);
 }
 
-/* ================
-   صفحة جدول المادة
-================ */
+/* صفحة جدول المادة */
 function openSubject(subj){
   currentSubject = subj;
   if(currentRole==='teacher'){
-    // تحقق من كلمة سر المادة الخاصة
     const saved = localStorage.getItem(kSubPass(currentClass, currentSubject));
     if(!saved){
-      // أول مرة: اطلب تعيين كلمة
       byId('subPassTitle').textContent = `تعيين كلمة سر — ${currentSubject}`;
       byId('subPassHint').textContent = 'أول مرة لهذه المادة. عيّن كلمة سر وسيتم تذكرها.';
       byId('subjectPassInput').value = '';
       byId('modalSubject').style.display = 'grid';
       return;
     }else{
-      // اطلب إدخالها
       byId('subPassTitle').textContent = `🔐 كلمة سر المادة — ${currentSubject}`;
       byId('subPassHint').textContent = 'اكتب كلمة السر التي عيّنها مدرس هذه المادة.';
       byId('subjectPassInput').value = '';
@@ -346,7 +324,6 @@ function openSubject(subj){
       return;
     }
   }
-  // ولي الأمر → افتح مباشرة
   enterTable(false);
 }
 
@@ -359,10 +336,7 @@ function enterTable(canEdit){
     : `وضع ولي الأمر — قراءة فقط. الصف: ${currentClass}`;
   byId('teacherActions').style.display = canEdit ? 'flex' : 'none';
 
-  // تأكد من تزامن أسماء الطلاب بين المادة وكشف الأسماء
   syncSubjectWithRoster(currentClass, currentSubject);
-
-  // ابنِ الجدول
   renderTable(canEdit);
 }
 
@@ -379,23 +353,24 @@ function renderTable(canEdit){
   </tr></thead><tbody>`;
 
   data.forEach((row, i)=>{
+    // استخدم aria-label بدلاً من data-label لتجنب التكرار وتحسين الوصول
     html += `<tr>
-      <td class="name" data-label="الاسم">
+      <td class="name" aria-label="الاسم">
         <div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="name" data-i="${i}">${esc(row.name)}</div>
       </td>
-      <td data-label="الحضور">
+      <td aria-label="الحضور">
         <div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="attend" data-i="${i}">${esc(row.attend??'')}</div>
       </td>
-      <td data-label="المشاركة">
+      <td aria-label="المشاركة">
         <div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="part" data-i="${i}">${esc(row.part??'')}</div>
       </td>
-      <td data-label="شفوي">
+      <td aria-label="شفوي">
         <div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="oral" data-i="${i}">${esc(row.oral??'')}</div>
       </td>
-      <td data-label="تحريري">
+      <td aria-label="تحريري">
         <div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="written" data-i="${i}">${esc(row.written??'')}</div>
       </td>
-      ${canEdit?`<td data-label="إجراء"><button class="btn-del" data-del="${i}">حذف</button></td>`:''}
+      ${canEdit?`<td aria-label="إجراء"><button class="btn-del" data-del="${i}">حذف</button></td>`:''}
     </tr>`;
   });
 
@@ -404,7 +379,6 @@ function renderTable(canEdit){
 
   if(!canEdit) return;
 
-  // أحداث التحرير الفوري
   byId('tableWrap').querySelectorAll('.cell[contenteditable="true"]').forEach(el=>{
     el.addEventListener('input', ()=> {
       const i = +el.getAttribute('data-i');
@@ -414,39 +388,32 @@ function renderTable(canEdit){
       saveSubjectData(currentClass, currentSubject, arr);
     });
   });
-  // حذف طالب
+
   byId('tableWrap').querySelectorAll('[data-del]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const i = +btn.getAttribute('data-del');
       if(!confirm('تأكيد حذف هذا الطالب من جميع المواد في هذا الصف؟')) return;
-      // حذف من كشف الأسماء العام
       const roster = loadRoster(currentClass);
       const name = (loadSubjectData(currentClass,currentSubject)[i]||{}).name;
       const idx = roster.indexOf(name);
       if(idx>-1) roster.splice(idx,1);
       saveRoster(currentClass, roster);
-      // مزامنة كل المواد
       subjects.forEach(s=> removeStudentFromSubject(currentClass, s, name));
-      // إعادة العرض
       syncSubjectWithRoster(currentClass, currentSubject);
       renderTable(true);
     });
   });
 }
 
-/* ================
-   إضافة طالب جديد
-================ */
+/* إضافة طالب */
 function addStudent(){
   const name = prompt('اكتب اسم الطالب:');
   if(!name) return;
-  // أضِف إلى كشف الأسماء
   const roster = loadRoster(currentClass);
   if(!roster.includes(name)) {
     roster.push(name);
     saveRoster(currentClass, roster);
   }
-  // أضِف إلى جميع المواد (صفوف فارغة)
   subjects.forEach(s=>{
     const arr = loadSubjectData(currentClass, s);
     if(!arr.find(r=>r.name===name)){
@@ -454,28 +421,22 @@ function addStudent(){
       saveSubjectData(currentClass, s, arr);
     }
   });
-  // أعِد الرسم للمادة الحالية
   renderTable(true);
 }
 function manualSave(){ alert('✅ تم حفظ البيانات محليًا في هذا الجهاز.'); }
 
-/* ================
-   تنقّل
-================ */
+/* تنقل */
 function backToMaterials(){
   pageTable.style.display = 'none';
   pageMaterials.style.display = 'block';
 }
 
-/* =========================
-   مخزن البيانات (localStorage)
-========================= */
+/* مخزن البيانات */
 function ensureRoster(cls){
   let roster = loadRoster(cls);
   if(roster.length===0){
     roster = ["محمد ياسين أحمد الجدري","أحمد صالح محمد"];
     saveRoster(cls, roster);
-    // أنشئ سجلات لكل المواد
     subjects.forEach(s=>{
       const arr = roster.map(n=>({name:n, attend:'', part:'', oral:'', written:''}));
       saveSubjectData(cls, s, arr);
@@ -497,13 +458,11 @@ function saveSubjectData(cls, subj, arr){
 function syncSubjectWithRoster(cls, subj){
   const roster = loadRoster(cls);
   let arr = loadSubjectData(cls, subj);
-  // أضِف المفقودين
   roster.forEach(name=>{
     if(!arr.find(r=>r.name===name)){
       arr.push({name, attend:'', part:'', oral:'', written:''});
     }
   });
-  // احذف الزائدين غير الموجودين في الروستر
   arr = arr.filter(r=>roster.includes(r.name));
   saveSubjectData(cls, subj, arr);
 }
@@ -513,9 +472,7 @@ function removeStudentFromSubject(cls, subj, name){
   saveSubjectData(cls, subj, arr);
 }
 
-/* =========================
-   حمايات كلمة السر
-========================= */
+/* حمايات كلمة السر */
 function openTeacherModal(){
   byId('teacherPassInput').value = '';
   byId('modalTeacher').style.display = 'grid';
@@ -537,7 +494,6 @@ function confirmSubjectPass(){
   const key = kSubPass(currentClass, currentSubject);
   const saved = localStorage.getItem(key);
   if(!saved){
-    // تعيين أول مرة
     localStorage.setItem(key, entered);
     closeSubjectModal();
     enterTable(true);
@@ -554,7 +510,6 @@ function confirmSubjectPass(){
 /* أدوات */
 function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'<') }
 
-/* إغلاق المودالات عند الضغط خارج الصندوق */
 byId('modalTeacher').addEventListener('click',e=>{ if(e.target.id==='modalTeacher') closeTeacherModal(); });
 byId('modalSubject').addEventListener('click',e=>{ if(e.target.id==='modalSubject') closeSubjectModal(); });
 </script>
