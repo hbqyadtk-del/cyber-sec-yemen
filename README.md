@@ -37,22 +37,100 @@
   h2{margin:0 0 14px;font-size:20px}
   .row{display:flex;gap:10px;flex-wrap:wrap}
   .center{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
-  /* جدول المادة */
-  .table-wrap{background:#0b1220;border:1px solid var(--border);border-radius:14px;overflow-x:auto}
-  table{width:100%;border-collapse:collapse;min-width:700px}
-  th,td{border:1px solid var(--border);padding:10px;text-align:center;font-size:14px}
-  th{background:#0e1a2b;color:#cfe8ff;font-weight:800}
-  th.name,td.name{text-align:right}
-  .cell{width:100%;min-height:24px;outline:none;border:none;background:transparent;color:var(--text);white-space:pre-wrap;word-break:break-word;text-align:right;padding:2px}
-  .cell[contenteditable="false"]{color:#a7b4c2}
-  /* مودالات */
-  .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.55);z-index:20}
-  .box{width:95%;max-width:420px;background:#0c1424;border:1px solid var(--border);border-radius:16px;padding:18px}
-  .box h3{margin:0 0 10px}
-  .input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #1f2937;background:#071020;color:var(--text);outline:none}
-  .role-btn{flex:1 1 180px;padding:12px;text-align:center;border-radius:12px;border:1px solid #1f2937;background:#0b1a2b;color:#cfe8ff;cursor:pointer;font-weight:800}
-  .role-btn:hover{border-color:#284062}
-  .muted{color:#9ca3af}
+  
+  /* جدول المادة — متجاوب بالكامل */
+  .table-wrap {
+    background: #0b1220;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow-x: auto;
+    margin-top: 8px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px;
+    text-align: center;
+  }
+
+  th {
+    background: #0e1a2b;
+    color: #cfe8ff;
+    font-weight: 800;
+  }
+
+  th.name, td.name {
+    text-align: right;
+  }
+
+  .cell {
+    width: 100%;
+    min-height: 24px;
+    outline: none;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    text-align: right;
+    padding: 2px;
+  }
+
+  .cell[contenteditable="false"] {
+    color: #a7b4c2;
+  }
+
+  /* 👇 جدول متجاوب على الشاشات الصغيرة */
+  @media (max-width: 768px) {
+    .table-wrap {
+      overflow-x: hidden;
+    }
+
+    table, thead, tbody, th, td, tr {
+      display: block;
+      width: 100%;
+    }
+
+    thead tr {
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+    }
+
+    tr {
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #0e1622;
+    }
+
+    td {
+      text-align: right;
+      padding: 10px 12px !important;
+      position: relative;
+      border: none;
+    }
+
+    td:before {
+      content: attr(data-label) ": ";
+      font-weight: bold;
+      color: var(--accent);
+      display: inline-block;
+      width: 100px;
+      text-align: left;
+    }
+
+    td.name:before {
+      content: "الاسم: ";
+    }
+  }
 </style>
 </head>
 <body>
@@ -302,12 +380,22 @@ function renderTable(canEdit){
 
   data.forEach((row, i)=>{
     html += `<tr>
-      <td class="name"><div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="name" data-i="${i}">${esc(row.name)}</div></td>
-      <td><div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="attend" data-i="${i}">${esc(row.attend??'')}</div></td>
-      <td><div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="part" data-i="${i}">${esc(row.part??'')}</div></td>
-      <td><div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="oral" data-i="${i}">${esc(row.oral??'')}</div></td>
-      <td><div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="written" data-i="${i}">${esc(row.written??'')}</div></td>
-      ${canEdit?`<td><button class="btn-del" data-del="${i}">حذف</button></td>`:''}
+      <td class="name" data-label="الاسم">
+        <div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="name" data-i="${i}">${esc(row.name)}</div>
+      </td>
+      <td data-label="الحضور">
+        <div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="attend" data-i="${i}">${esc(row.attend??'')}</div>
+      </td>
+      <td data-label="المشاركة">
+        <div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="part" data-i="${i}">${esc(row.part??'')}</div>
+      </td>
+      <td data-label="شفوي">
+        <div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="oral" data-i="${i}">${esc(row.oral??'')}</div>
+      </td>
+      <td data-label="تحريري">
+        <div class="cell" contenteditable="${canEdit?'true':'false'}" data-f="written" data-i="${i}">${esc(row.written??'')}</div>
+      </td>
+      ${canEdit?`<td data-label="إجراء"><button class="btn-del" data-del="${i}">حذف</button></td>`:''}
     </tr>`;
   });
 
@@ -464,7 +552,7 @@ function confirmSubjectPass(){
 }
 
 /* أدوات */
-function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;') }
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'<') }
 
 /* إغلاق المودالات عند الضغط خارج الصندوق */
 byId('modalTeacher').addEventListener('click',e=>{ if(e.target.id==='modalTeacher') closeTeacherModal(); });
